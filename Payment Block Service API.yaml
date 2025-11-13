@@ -1,0 +1,147 @@
+openapi: 3.0.0
+info:
+  title: Payment Block Service API
+  description: API для управления блокировками платежей клиентов
+  version: 1.0.0
+servers:
+  - url: https://api.tbank.com/v1
+    description: Production server
+
+tags:
+  - name: Blocking
+    description: Управление блокировками платежей
+
+paths:
+  /blocks/{clientId}:
+    post:
+      tags: [Blocking]
+      summary: Заблокировать платежи клиента
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Идентификатор клиента
+        - name: X-Operator-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Идентификатор оператора
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockRequest"
+      responses:
+        '201':
+          description: Блокировка успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResponse"
+        '400':
+          description: Неверный запрос
+        '409':
+          description: Клиент уже заблокирован
+
+    delete:
+      tags: [Blocking]
+      summary: Разблокировать платежи клиента
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Operator-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Идентификатор оператора
+      responses:
+        '204':
+          description: Клиент успешно разблокирован
+        '404':
+          description: Активная блокировка не найдена
+
+    get:
+      tags: [Blocking]
+      summary: Проверить статус блокировки клиента
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Статус блокировки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockStatusResponse"
+
+components:
+  schemas:
+    BlockRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          enum: [fraud, incorrect_details]
+          description: Причина блокировки
+        comment:
+          type: string
+          description: Комментарий
+
+    BlockResponse:
+      type: object
+      properties:
+        blockId:
+          type: string
+          example: "block_123"
+        clientId:
+          type: string
+          example: "CLNT-12345"
+        reason:
+          type: string
+          example: "fraud"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-20T12:00:00Z"
+        createdBy:
+          type: string
+          example: "operator_001"
+
+    BlockStatusResponse:
+      type: object
+      required:
+        - isBlocked
+        - clientId
+      properties:
+        isBlocked:
+          type: boolean
+          example: true
+        clientId:
+          type: string
+          example: "CLNT-12345"
+        reason:
+          type: string
+          nullable: true
+          example: "fraud"
+        blockedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-20T12:00:00Z"
+        blockedBy:
+          type: string
+          nullable: true
+          example: "operator_001"
