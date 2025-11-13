@@ -1,0 +1,33 @@
+@startuml
+title Управление блокировками платежей
+
+actor "Оператор" as Operator
+participant "Сервис\nплатежей" as Payment
+participant "API\nБлокировок" as API
+participant "База\nданных" as DB
+
+Operator -> API: Блокировка клиента
+API -> DB: Проверить существующие блокировки
+DB --> API: Результат проверки
+alt Клиент не заблокирован
+    API -> DB: Создать блокировку
+    DB --> API: ID новой блокировки
+    API --> Operator: Успех
+else Клиент уже заблокирован
+    API --> Operator: Ошибка
+end
+
+Payment -> API: Проверить статус
+API -> DB: Запрос активной блокировки
+DB --> API: Данные блокировки
+alt Заблокирован
+    API --> Payment: Отклонить платеж
+else Активен
+    API --> Payment: Разрешить платеж
+end
+
+Operator -> API: Разблокировать клиента
+API -> DB: Снять блокировку
+DB --> API: Подтверждение
+API --> Operator: Клиент разблокирован
+@enduml
